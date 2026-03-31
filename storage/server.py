@@ -61,6 +61,9 @@ def secret_archive():
         "note": "Sensitive backup data"
     })
 
+@app.route("/health")
+def health():
+    return "OK"
 
 # -----------------------
 # Run

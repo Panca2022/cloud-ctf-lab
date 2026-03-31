@@ -1,8 +1,9 @@
-version: '3'
+version: '3.8'
 
 services:
   app:
     build: ./app
+    container_name: app
     ports:
       - "5000:5000"
     depends_on:
@@ -10,6 +11,7 @@ services:
       - storage
     networks:
       - ctfnet
+    restart: always
 
   metadata:
     build: ./metadata
@@ -17,8 +19,8 @@ services:
     networks:
       - ctfnet
     volumes:
-      - type: tmpfs
-        target: /data
+      - shared-data:/data
+    restart: always
 
   storage:
     build: ./storage
@@ -26,8 +28,12 @@ services:
     networks:
       - ctfnet
     volumes:
-      - type: tmpfs
-        target: /data
+      - shared-data:/data
+    restart: always
 
 networks:
   ctfnet:
+    driver: bridge
+
+volumes:
+  shared-data:
