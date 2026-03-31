@@ -12,7 +12,13 @@ services:
   metadata:
     build: ./metadata
     container_name: metadata
+    volumes:
+      - type: tmpfs
+        target: /data
 
   storage:
     build: ./storage
     container_name: storage
+    volumes:
+      - type: tmpfs
+        target: /data

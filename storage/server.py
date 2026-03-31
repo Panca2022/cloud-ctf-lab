@@ -1,24 +1,48 @@
 from flask import Flask, request, jsonify
 import os
+import json
+import time
 import random
 import string
-import secrets
+
 app = Flask(__name__)
 
-# 🔐 Fake credentials (from metadata)
-VALID_ACCESS_KEY = os.environ.get("ACCESS_KEY",secrets.token_hex(8))
-VALID_SECRET_KEY = os.environ.get("SECRET_KEY",secrets.token_hex(16))
+CREDS_FILE = "/data/creds.json"
 
-# 📦 Buckets
+# -----------------------
+# Safe Credential Loader (Race Condition Fix)
+# -----------------------
+while True:
+    try:
+        with open(CREDS_FILE) as f:
+            CREDS = json.load(f)
+        break
+    except:
+        time.sleep(0.2)
+
+VALID_ACCESS_KEY = CREDS["AccessKeyId"]
+VALID_SECRET_KEY = CREDS["SecretAccessKey"]
+
+
+# -----------------------
+# Buckets
+# -----------------------
 BUCKETS = ["public-assets", "logs-backup", "secret-archive"]
 
-# 🔥 Generate dynamic flag at runtime
+
+# -----------------------
+# Generate Dynamic Flag
+# -----------------------
 def generate_flag():
-    rand = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=20))
-    return f"f|@g{{CTF_{rand}}}"
+    rand = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+    return f"flag{{CTF_{rand}}}"
 
 FLAG = generate_flag()
 
+
+# -----------------------
+# Routes
+# -----------------------
 @app.route("/")
 def list_buckets():
     return jsonify(BUCKETS)
@@ -29,15 +53,17 @@ def secret_archive():
     access_key = request.headers.get("X-Access-Key")
     secret_key = request.headers.get("X-Secret-Key")
 
-    # 🔒 Access control
     if access_key != VALID_ACCESS_KEY or secret_key != VALID_SECRET_KEY:
         return "Access Denied", 403
 
-    # 🔥 Return dynamic flag
     return jsonify({
         "flag": FLAG,
         "note": "Sensitive backup data"
     })
 
 
-app.run(host="0.0.0.0", port=80)
+# -----------------------
+# Run
+# -----------------------
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=80)
