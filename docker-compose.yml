@@ -8,17 +8,17 @@ services:
     depends_on:
       - metadata
       - storage
+    env_file:
+      - .env
 
   metadata:
     build: ./metadata
     container_name: metadata
-    environment:
-      - ACCESS_KEY=${ACCESS_KEY}
-      - SECRET_KEY=${SECRET_KEY}
+    env_file:
+      - .env
 
   storage:
     build: ./storage
     container_name: storage
-    environment:
-      - ACCESS_KEY=${ACCESS_KEY}
-      - SECRET_KEY=${SECRET_KEY}
+    env_file:
+      - .env

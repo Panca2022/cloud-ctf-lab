@@ -1,63 +1,62 @@
 from flask import Flask, jsonify, request
 import os
-import random
-import string
-import secrets 
+import secrets
+
 app = Flask(__name__)
 
-# 🔐 Generate credentials
+# Load secrets from environment
+ACCESS_KEY = os.environ.get("ACCESS_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+# Store valid IMDSv2 tokens
+VALID_TOKENS = set()
+
+# Generate IAM credentials dynamically
 def generate_creds():
     return {
-        "AccessKeyId": os.environ.get("ACCESS_KEY"),
-        "SecretAccessKey": os.environ.get("SECRET_KEY"),
-        "Token": ''.join(random.choices(string.ascii_letters, k=64))
+        "AccessKeyId": ACCESS_KEY,
+        "SecretAccessKey": SECRET_KEY,
+        "Token": secrets.token_urlsafe(32)
     }
 
 CREDS = generate_creds()
 
-# 🔑 Store valid tokens
-VALID_TOKENS = set()
-
-# 🧠 Generate IMDSv2 token
+# -----------------------
+# IMDSv2 token endpoint
+# -----------------------
 @app.route("/latest/api/token", methods=["PUT"])
 def token():
     ttl = request.headers.get("X-aws-ec2-metadata-token-ttl-seconds")
-
     if not ttl:
         return "Missing TTL header", 400
 
     token = secrets.token_hex(32)
-
-    VALID_TOKENS.add(token)   # ✅ STORE TOKEN
-
+    VALID_TOKENS.add(token)
     return token
 
-# 🔒 Token validation middleware
+# -----------------------
+# Token validation helper
+# -----------------------
 def require_token():
     token = request.headers.get("X-aws-ec2-metadata-token")
-    if token not in VALID_TOKENS:
-        return False
-    return True
+    return token in VALID_TOKENS
 
-
-# 🔓 Root (for discovery)
+# -----------------------
+# Metadata endpoints
+# -----------------------
 @app.route("/")
 def root():
     return "latest/"
-
 
 @app.route("/latest/")
 def latest():
     return "meta-data/"
 
-
-# 🔒 Protected metadata endpoints
 @app.route("/latest/meta-data/")
 def meta_root():
     if not require_token():
         return "Unauthorized", 401
     return "iam/"
-
 
 @app.route("/latest/meta-data/iam/")
 def iam():
@@ -65,19 +64,17 @@ def iam():
         return "Unauthorized", 401
     return "security-credentials/"
 
-
 @app.route("/latest/meta-data/iam/security-credentials/")
 def role_name():
     if not require_token():
         return "Unauthorized", 401
     return "ctf-role"
 
-
 @app.route("/latest/meta-data/iam/security-credentials/ctf-role")
-def creds():
+def creds_endpoint():
     if not require_token():
         return "Unauthorized", 401
     return jsonify(CREDS)
 
-
-app.run(host="0.0.0.0", port=80)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=80)
