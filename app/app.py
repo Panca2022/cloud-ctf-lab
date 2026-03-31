@@ -10,49 +10,17 @@ HTML = """
     <meta name="autocomplete" content="off">
     <title>Cloud File Fetcher</title>
     <style>
-        body {
-            background: #0f172a;
-            color: #e2e8f0;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            width: 650px;
-            margin: 80px auto;
-            padding: 30px;
-            background: #1e293b;
-            border-radius: 10px;
-        }
+        body { background: #0f172a; color: #e2e8f0; font-family: Arial, sans-serif; }
+        .container { width: 650px; margin: 80px auto; padding: 30px; background: #1e293b; border-radius: 10px; }
         h2 { text-align: center; color: #38bdf8; }
         label { margin-top: 10px; display: block; }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            background: #0f172a;
-            color: white;
-            border: none;
-            border-radius: 6px;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 20px;
-            background: #38bdf8;
-            border: none;
-            border-radius: 6px;
-        }
-        .output {
-            margin-top: 20px;
-            padding: 15px;
-            background: black;
-            font-family: monospace;
-            white-space: pre-wrap;
-        }
+        input { width: 100%; padding: 10px; margin-top: 5px; background: #0f172a; color: white; border: none; border-radius: 6px; }
+        button { width: 100%; padding: 12px; margin-top: 20px; background: #38bdf8; border: none; border-radius: 6px; }
+        .output { margin-top: 20px; padding: 15px; background: black; font-family: monospace; white-space: pre-wrap; }
+        .hint { margin-top: 15px; font-size: 0.9em; color: #facc15; }
     </style>
 </head>
 <body>
-
-<!-- metadata: http://metadata/ -->
 
 <div class="container">
     <h2>☁️ Cloud File Fetcher</h2>
@@ -60,19 +28,20 @@ HTML = """
     <form method="POST" autocomplete="off">
 
         <label>Target URL</label>
-     	<input name="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Try internal services like http://metadata/ or http://storage/">
+        <input name="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               placeholder="Try internal services: http://metadata/ or http://storage/">
 
         <label>HTTP Method</label>
         <input name="method" placeholder="GET / PUT / POST">
 
+        <label>Metadata Token (IMDSv2 Header)</label>
+        <input name="metadata_token" placeholder="X-aws-ec2-metadata-token (if required)" autocomplete="off">
+
         <label>X-Access-Key</label>
-        <input name="access_key" placeholder="Enter access key" autocomplete="off">
+        <input name="access_key" placeholder="Enter access key (from metadata)" autocomplete="off">
 
         <label>X-Secret-Key</label>
-        <input name="secret_key" placeholder="Enter secret key" autocomplete="off">
-
-	<label>Metadata Token</label>
-	<input name="metadata_token" placeholder="Paste IMDSv2 token here">
+        <input name="secret_key" placeholder="Enter secret key (from metadata)" autocomplete="off">
 
         <button type="submit">Fetch</button>
     </form>
@@ -80,6 +49,14 @@ HTML = """
     {% if output %}
     <div class="output">{{output}}</div>
     {% endif %}
+
+    <div class="hint">
+        💡 Hints:<br>
+        1. Internal services might require authentication.<br>
+        2. Metadata endpoints use IMDSv2 token (PUT /latest/api/token).<br>
+        3. Storage requires credentials from metadata.<br>
+        4. 401 = missing token, 403 = wrong credentials.
+    </div>
 </div>
 
 </body>
