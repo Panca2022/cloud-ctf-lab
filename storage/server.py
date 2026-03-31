@@ -6,8 +6,8 @@ import string
 app = Flask(__name__)
 
 # 🔐 Fake credentials (from metadata)
-VALID_ACCESS_KEY = os.environ.get("ACCESS_KEY")
-VALID_SECRET_KEY = os.environ.get("SECRET_KEY")
+VALID_ACCESS_KEY = os.environ.get("ACCESS_KEY","CTF_ACCESS_KEY")
+VALID_SECRET_KEY = os.environ.get("SECRET_KEY","CTF_SECRET_KEY")
 
 # 📦 Buckets
 BUCKETS = ["public-assets", "logs-backup", "secret-archive"]

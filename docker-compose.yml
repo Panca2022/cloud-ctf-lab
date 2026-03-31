@@ -8,17 +8,11 @@ services:
     depends_on:
       - metadata
       - storage
-    env_file:
-      - .env
 
   metadata:
     build: ./metadata
     container_name: metadata
-    env_file:
-      - .env
 
   storage:
     build: ./storage
     container_name: storage
-    env_file:
-      - .env

@@ -5,8 +5,8 @@ import secrets
 app = Flask(__name__)
 
 # Load secrets from environment
-ACCESS_KEY = os.environ.get("ACCESS_KEY")
-SECRET_KEY = os.environ.get("SECRET_KEY")
+ACCESS_KEY = os.environ.get("ACCESS_KEY","CTF_ACCESS_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY","CTF_SECRET_KEY")
 
 # Store valid IMDSv2 tokens
 VALID_TOKENS = set()
