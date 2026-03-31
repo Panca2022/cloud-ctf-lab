@@ -15,7 +15,7 @@ BUCKETS = ["public-assets", "logs-backup", "secret-archive"]
 # 🔥 Generate dynamic flag at runtime
 def generate_flag():
     rand = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=20))
-    return f"f|g{{CTF_{rand}}}"
+    return f"f|@g{{CTF_{rand}}}"
 
 FLAG = generate_flag()
 
