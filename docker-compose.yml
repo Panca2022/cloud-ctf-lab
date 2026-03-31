@@ -8,10 +8,14 @@ services:
     depends_on:
       - metadata
       - storage
+    networks:
+      - ctfnet
 
   metadata:
     build: ./metadata
     container_name: metadata
+    networks:
+      - ctfnet
     volumes:
       - type: tmpfs
         target: /data
@@ -19,6 +23,11 @@ services:
   storage:
     build: ./storage
     container_name: storage
+    networks:
+      - ctfnet
     volumes:
       - type: tmpfs
         target: /data
+
+networks:
+  ctfnet:
