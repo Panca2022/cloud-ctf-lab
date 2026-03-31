@@ -49,14 +49,6 @@ HTML = """
     {% if output %}
     <div class="output">{{output}}</div>
     {% endif %}
-
-    <div class="hint">
-        💡 Hints:<br>
-        1. Internal services might require authentication.<br>
-        2. Metadata endpoints use IMDSv2 token (PUT /latest/api/token).<br>
-        3. Storage requires credentials from metadata.<br>
-        4. 401 = missing token, 403 = wrong credentials.
-    </div>
 </div>
 
 </body>
@@ -72,16 +64,15 @@ def index():
         method = request.form.get("method", "GET").upper()
 
         headers = {}
-
-        # ✅ Required for IMDSv2 token request
+        # Required for IMDSv2 token request
         headers["X-aws-ec2-metadata-token-ttl-seconds"] = "21600"
 
-        # ✅ Metadata token (for protected metadata endpoints)
+        # Metadata token
         metadata_token = request.form.get("metadata_token")
         if metadata_token:
             headers["X-aws-ec2-metadata-token"] = metadata_token
 
-        # ✅ Storage credentials (for storage service)
+        # Storage credentials
         access_key = request.form.get("access_key")
         secret_key = request.form.get("secret_key")
 
@@ -92,7 +83,7 @@ def index():
             headers["X-Secret-Key"] = secret_key
 
         try:
-            # ✅ HTTP method handling
+            # Handle HTTP method
             if method == "POST":
                 r = requests.post(url, headers=headers, timeout=3)
             elif method == "PUT":
@@ -102,25 +93,29 @@ def index():
             else:
                 r = requests.get(url, headers=headers, timeout=3)
 
-            # ✅ Pretty JSON output
+            # Pretty JSON output
             try:
                 output = json.dumps(r.json(), indent=4)
             except:
                 output = r.text[:1000]
 
+            # Context-aware hints
+            if r.status_code == 401:
+                output += "\n\n💡 Hint: It looks like you might need a metadata token to access this endpoint."
+            elif r.status_code == 403:
+                output += "\n\n💡 Hint: Access denied. Check if you are using the correct access and secret keys."
+            elif r.status_code >= 500:
+                output += "\n\n💡 Hint: Server error. Try a different HTTP method or check the URL."
+
+        except requests.exceptions.ConnectionError:
+            output = "⚠️ Could not connect to the target URL."
+            output += "\n\n💡 Hint: Are you using the correct internal service name? Example: http://metadata/ or http://storage/"
+        except requests.exceptions.Timeout:
+            output = "⚠️ Request timed out."
+            output += "\n\n💡 Hint: Try increasing timeout or check network connectivity."
         except Exception as e:
-            output = f"""
-Error fetching URL.
-
-Debug Info:
-- Internal services may exist:
-    • http://metadata/
-    • http://storage/
-- Try different HTTP methods
-
-Actual Error:
-{str(e)}
-"""
+            output = f"Error fetching URL: {str(e)}"
+            output += "\n\n💡 Hint: Double-check your URL, HTTP method, and credentials."
 
     return render_template_string(HTML, output=output)
 
