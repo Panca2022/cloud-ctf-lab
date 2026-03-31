@@ -6,19 +6,18 @@ import string
 app = Flask(__name__)
 
 # 🔐 Fake credentials (from metadata)
-VALID_ACCESS_KEY = "MBROWGXXIPAJCJAX"
-VALID_SECRET_KEY = "mO0pmOoXValvt8PhT9OJwaVSXzrkoBs9"
+VALID_ACCESS_KEY = os.environ.get("ACCESS_KEY","PLACEHOLDER")
+VALID_SECRET_KEY = os.environ.get("SECRET_KEY","PLACEHOLDER")
 
 # 📦 Buckets
 BUCKETS = ["public-assets", "logs-backup", "secret-archive"]
 
 # 🔥 Generate dynamic flag at runtime
 def generate_flag():
-    rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-    return f"CTF{{CLOUD_{rand}}}"
+    rand = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=20))
+    return f"f|g{{CTF_{rand}}}"
 
 FLAG = generate_flag()
-
 
 @app.route("/")
 def list_buckets():

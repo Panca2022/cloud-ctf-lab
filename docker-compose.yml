@@ -20,5 +20,5 @@ services:
     build: ./storage
     container_name: storage
     environment:
-      - ACCESS_KEY=MBROWGXXIPAJCJAX
-      - SECRET_KEY=mO0pmOoXValvt8PhT9OJwaVSXzrkoBs9
+      - ACCESS_KEY=${ACCESS_KEY}
+      - SECRET_KEY=${SECRET_KEY}
