@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build: ./app
@@ -7,8 +5,10 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - metadata
-      - storage
+      metadata:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
     networks:
       - ctfnet
     restart: always
@@ -21,6 +21,11 @@ services:
     volumes:
       - shared-data:/data
     restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   storage:
     build: ./storage
@@ -30,6 +35,11 @@ services:
     volumes:
       - shared-data:/data
     restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 networks:
   ctfnet:

@@ -1,7 +1,19 @@
+import logging
+
 from flask import Flask, request, render_template_string, json
 import requests
 
 app = Flask(__name__)
+
+# --- Logging setup -----------------------------------------------------
+# Logs every SSRF attempt (method, URL, response status/size) to the
+# console. In an interview you can `docker-compose logs -f app` and
+# show the whole attack chain happening live.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+log = logging.getLogger("app")
 
 HTML = """
 <!DOCTYPE html>
@@ -55,6 +67,7 @@ HTML = """
 </html>
 """
 
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     output = ""
@@ -82,6 +95,8 @@ def index():
         if secret_key:
             headers["X-Secret-Key"] = secret_key
 
+        log.info("SSRF attempt: method=%s url=%s", method, url)
+
         try:
             # Handle HTTP method
             if method == "POST":
@@ -93,10 +108,12 @@ def index():
             else:
                 r = requests.get(url, headers=headers, timeout=3)
 
+            log.info("Response: status=%s len=%s", r.status_code, len(r.content))
+
             # Pretty JSON output
             try:
                 output = json.dumps(r.json(), indent=4)
-            except:
+            except Exception:
                 output = r.text[:1000]
 
             # Context-aware hints
@@ -108,12 +125,15 @@ def index():
                 output += "\n\n💡 Hint: Server error. Try a different HTTP method or check the URL."
 
         except requests.exceptions.ConnectionError:
+            log.warning("Connection error reaching url=%s", url)
             output = "⚠️ Could not connect to the target URL."
             output += "\n\n💡 Hint: Are you using the correct internal service name? Example: http://metadata/ or http://storage/"
         except requests.exceptions.Timeout:
+            log.warning("Timeout reaching url=%s", url)
             output = "⚠️ Request timed out."
             output += "\n\n💡 Hint: Try increasing timeout or check network connectivity."
         except Exception as e:
+            log.error("Unhandled error fetching url=%s: %s", url, e)
             output = f"Error fetching URL: {str(e)}"
             output += "\n\n💡 Hint: Double-check your URL, HTTP method, and credentials."
 

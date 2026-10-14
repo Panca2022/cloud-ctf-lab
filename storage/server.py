@@ -4,8 +4,18 @@ import json
 import time
 import random
 import string
+import logging
 
 app = Flask(__name__)
+
+# -----------------------
+# Logging
+# -----------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+log = logging.getLogger("storage")
 
 CREDS_FILE = "/data/creds.json"
 
@@ -17,7 +27,7 @@ while True:
         with open(CREDS_FILE) as f:
             CREDS = json.load(f)
         break
-    except:
+    except Exception:
         time.sleep(0.2)
 
 VALID_ACCESS_KEY = CREDS["AccessKeyId"]
@@ -31,13 +41,25 @@ BUCKETS = ["public-assets", "logs-backup", "secret-archive"]
 
 
 # -----------------------
-# Generate Dynamic Flag
+# Flag (persisted across restarts)
 # -----------------------
-def generate_flag():
-    rand = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
-    return f"flag{{CTF_{rand}}}"
+# Lives on the same /data volume as creds.json, so no docker-compose change
+# is needed beyond the shared-data volume mount already in place.
+FLAG_FILE = "/data/flag.txt"
 
-FLAG = generate_flag()
+
+def load_or_create_flag():
+    if os.path.exists(FLAG_FILE):
+        with open(FLAG_FILE) as f:
+            return f.read().strip()
+    rand = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+    flag = f"flag{{CTF_{rand}}}"
+    with open(FLAG_FILE, "w") as f:
+        f.write(flag)
+    return flag
+
+
+FLAG = load_or_create_flag()
 
 
 # -----------------------
@@ -54,16 +76,20 @@ def secret_archive():
     secret_key = request.headers.get("X-Secret-Key")
 
     if access_key != VALID_ACCESS_KEY or secret_key != VALID_SECRET_KEY:
+        log.warning("Access denied to /secret-archive")
         return "Access Denied", 403
 
+    log.info("Flag retrieved by authorized caller")
     return jsonify({
         "flag": FLAG,
         "note": "Sensitive backup data"
     })
 
+
 @app.route("/health")
 def health():
     return "OK"
+
 
 # -----------------------
 # Run
